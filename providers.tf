@@ -1,12 +1,12 @@
 
 terraform {
   backend "s3" {
-    bucket = "terraform-state-bucket"
-    key    = "state-bucket/terraform_state.tfstate"
-    region = var.region
+    bucket = "tfstatebucket-internal-project"
+    key    = "terraform_state.tfstate"
+    region = "eu-central-1"
   }
 }
 
 provider "aws" {
-    region = var.region
+  region = "eu-central-1"
 }

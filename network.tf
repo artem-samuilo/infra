@@ -19,7 +19,7 @@ resource "aws_subnet" "aws_subnet_private" {
     availability_zone       = element(var.availability_zones, count.index)
     map_public_ip_on_launch = "false"
     count                   = length(var.private_subnets)
-    tags {
+    tags = {
      Name = "aws_subnet_private_${count.index + 1}"
     }
 }
@@ -30,7 +30,7 @@ resource "aws_subnet" "aws_subnet_public" {
     availability_zone       = element(var.availability_zones, count.index)
     map_public_ip_on_launch = "true"
     count                   = length(var.public_subnets)
-    tags {
+    tags = {
      Name = "aws_subnet_public_${count.index + 1}"
     }
 }
@@ -56,14 +56,14 @@ resource "aws_route_table_association" "public" {
 
 resource "aws_eip" "aws_eip" {
     vpc                    = true
-    depends_on             = ["aws_internet_gateway.aws-igw"]
+    depends_on             = [aws_internet_gateway.aws-igw]
 }
 
 resource "aws_nat_gateway" "nat_gw" {
     connectivity_type      = "public"
     allocation_id          = "${aws_eip.aws_eip.id}"
-    subnet_id              = aws_subnet.public.[0]
-    depends_on             = ["aws_internet_gateway.aws-igw"]
+    subnet_id              = element(aws_subnet.aws_subnet_public.*.id, 0)
+    depends_on             = [aws_internet_gateway.aws-igw]
     tags = {
      Name = "NAT_GW"
   }

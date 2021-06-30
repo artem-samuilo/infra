@@ -15,7 +15,7 @@ data "aws_ami" "ubuntu" {
 }
 resource "aws_security_group" "bastion" {
   name                      = "SG-Bastion"
-  vpc_id                    = ${aws_vpc.main.id}
+  vpc_id                    = "${aws_vpc.main.id}"
 
   ingress {
     from_port               = 22
@@ -30,13 +30,14 @@ resource "aws_security_group" "bastion" {
     protocol                = "-1"
     cidr_blocks             = ["0.0.0.0/0"]
   }
+}
 
 resource "aws_instance" "bastion_host" {
   count                     = 1
   ami                       = data.aws_ami.ubuntu.id
   instance_type             = "t3.micro"
-  subnet_id                 = "${aws_subnet.aws_subnet_public.[0]}"
-  vpc_security_group_ids    = "${aws_security_group.bastion.id}"
+  subnet_id                 = element(aws_subnet.aws_subnet_public.*.id, 0)
+  vpc_security_group_ids    = ["${aws_security_group.bastion.id}"]
   root_block_device {
       volume_size = "20"
     }
