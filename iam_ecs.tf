@@ -1,24 +1,19 @@
-resource "aws_iam_role" "ecsTaskExecutionRole" {
-  name = "ecs-execution-task-role"
-
-  assume_role_policy = data.aws_iam_policy_document.assume_role_policy.json
+resource "aws_iam_role" "ecsInstanceRole" {
+  name = "ecsInstanceRole"
+  assume_role_policy =  file("policies/ecs-instance-role.json")
+  
   tags = {
     Name = "ecs_iam"
   }
 }
 
-data "aws_iam_policy_document" "assume_role_policy" {
-  statement {
-    actions = ["sts:AssumeRole"]
-
-    principals {
-      type        = "Service"
-      identifiers = ["ecs-tasks.amazonaws.com"]
-    }
+resource "aws_iam_role_policy" "amazonEC2ContainerServiceforEC2Role" {
+  name   = "ecs_instance_role_policy"
+  policy = file("policies/ecs-instance-role-policy.json")
+  role       = aws_iam_role.ecsInstanceRole.name
   }
-}
 
-resource "aws_iam_role_policy_attachment" "ecsTaskExecutionRole_policy" {
-  role       = aws_iam_role.ecsTaskExecutionRole.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role"
+  resource "aws_iam_instance_profile" "ecs_ec2" {
+  name = "ecs_ec2_prof"
+  role = aws_iam_role.ecsInstanceRole.name
 }

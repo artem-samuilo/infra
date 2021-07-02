@@ -13,7 +13,7 @@ data "aws_ami" "ubuntu" {
 
   owners                    = ["099720109477"] # Canonical
 }
-resource "aws_security_group" "bastion" {
+/*resource "aws_security_group" "bastion" {
   name                      = "SG-Bastion"
   vpc_id                    = "${aws_vpc.main.id}"
 
@@ -46,3 +46,4 @@ resource "aws_instance" "bastion_host" {
     Type = "Bastion Host"
   }
 }
+*/

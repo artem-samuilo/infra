@@ -1,41 +1,45 @@
 resource "aws_ecs_cluster" "ecs_project" {
   name = "ecs_project"
   tags = {
-    Name        = "project-ecs"
+    Name        = "ecs_project"
   }
 }
-/*
 
-resource "aws_cloudwatch_log_group" "log-group" {
-  name = "docker-logs"
+resource "aws_cloudwatch_log_group" "ecs_project-log-group" {
+  name = "ecs_project-logs"
 
   tags = {
-    Application = Project
+    Application = "Project"
   }
 }
 
-resource "aws_ecs_task_definition" "aws-ecs-task" {
-  family = "project-task"
+resource "aws_cloudwatch_log_stream" "ecs_project-log-stream" {
+  name           = "ecs_project-log-stream"
+  log_group_name = aws_cloudwatch_log_group.ecs_project-log-group.name
+}
+
+resource "aws_ecs_task_definition" "ecs_project-task-def" {
+  family = "ecs_project-task"
 
   container_definitions = <<DEFINITION
   [
     {
-      "name": "apache2-container",
-      "image": "apache2:latest",
-      "entryPoint": ["/usr/sbin/apache2ctl", "-DFOREGROUND"],
+      "name": "tomcat",
+      "image": "tomcat:latest",
       "essential": true,
+      "memory": 128,
       "logConfiguration": {
         "logDriver": "awslogs",
         "options": {
-          "awslogs-group": "${aws_cloudwatch_log_group.log-group.id}",
+          "awslogs-group": "${aws_cloudwatch_log_group.ecs_project-log-group.id}",
           "awslogs-region": "eu-central-1",
-          "awslogs-stream-prefix": "apache-logs"
+          "awslogs-stream-prefix": "${aws_cloudwatch_log_stream.ecs_project-log-stream.name}"
         }
       },
       "portMappings": [
         {
           "containerPort": 8080,
-          "hostPort": 8080
+          "hostPort": 0
         }
       ],
       "networkMode": "awsvpc"
@@ -44,39 +48,20 @@ resource "aws_ecs_task_definition" "aws-ecs-task" {
   DEFINITION
 
   requires_compatibilities = ["EC2"]
-  network_mode             = "awsvpc"
-  execution_role_arn       = aws_iam_role.ecsTaskExecutionRole.arn
-  task_role_arn            = aws_iam_role.ecsTaskExecutionRole.arn
-
   tags = {
-    Name        = "apache-ecs-td"
+    Name        = "tomcat-ecs-td"
   }
 }
 
-resource "aws_ecs_service" "aws-ecs-service" {
-  name                 = "apache-ecs-service"
-  cluster              = aws_ecs_cluster.ecs-ecs_project.id
-  task_definition      = "${aws_ecs_task_definition.aws-ecs-task.family}:${max(aws_ecs_task_definition.aws-ecs-task.revision, data.aws_ecs_task_definition.main.revision)}"
-  launch_type          = "FARGATE"
-  scheduling_strategy  = "REPLICA"
-  desired_count        = 1
-  force_new_deployment = true
-
-  network_configuration {
-    subnets          = aws_subnet.private.*.id
-    assign_public_ip = false
-    security_groups = [
-      aws_security_group.service_security_group.id,
-      aws_security_group.load_balancer_security_group.id
-    ]
-  }
+resource "aws_ecs_service" "ecs_project_service" {
+  name            = "ecs_project_service"
+  cluster         = aws_ecs_cluster.ecs_project.id
+  task_definition = aws_ecs_task_definition.ecs_project-task-def.arn
+  desired_count   = 1
 
   load_balancer {
-    target_group_arn = aws_lb_target_group.target_group.arn
-    container_name   = "${var.app_name}-${var.app_environment}-container"
+    target_group_arn = aws_alb_target_group.default-target-group.arn
+    container_name   = "tomcat"
     container_port   = 8080
   }
-
-  depends_on = [aws_lb_listener.listener]
 }
-*/
