@@ -24,8 +24,8 @@ resource "aws_ecs_task_definition" "ecs_project-task-def" {
   container_definitions = <<DEFINITION
   [
     {
-      "name": "tomcat",
-      "image": "tomcat:latest",
+      "name": "frontend",
+      "image": "738757238296.dkr.ecr.eu-central-1.amazonaws.com/project-ecs",
       "essential": true,
       "memory": 128,
       "logConfiguration": {
@@ -49,7 +49,7 @@ resource "aws_ecs_task_definition" "ecs_project-task-def" {
 
   requires_compatibilities = ["EC2"]
   tags = {
-    Name        = "tomcat-ecs-td"
+    Name        = "frontend-ecs-td"
   }
 }
 
@@ -60,8 +60,8 @@ resource "aws_ecs_service" "ecs_project_service" {
   desired_count   = 1
 
   load_balancer {
-    target_group_arn = aws_alb_target_group.default-target-group.arn
-    container_name   = "tomcat"
+    target_group_arn = aws_lb_target_group.frontend.arn
+    container_name   = "frontend"
     container_port   = 8080
   }
 }

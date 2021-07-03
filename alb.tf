@@ -6,13 +6,13 @@ resource "aws_lb" "ecs-alb" {
   subnets            = data.aws_subnet_ids.public.ids
 }
 
-resource "aws_alb_target_group" "default-target-group" {
-  name     = "tomcat-client-tg"
-  port     = 80
+resource "aws_lb_target_group" "frontend" {
+  name     = "frontend-client-tg"
+  port     = 5000
   protocol = "HTTP"
   vpc_id   = aws_vpc.main.id
   health_check {
-    path                = "/index.html"
+    path                = "/"
     port                = "traffic-port"
     healthy_threshold   = 5
     unhealthy_threshold = 2
@@ -22,15 +22,30 @@ resource "aws_alb_target_group" "default-target-group" {
   }
 }
 
-resource "aws_alb_listener" "ecs-alb-http-listener" {
+resource "aws_lb_listener" "frontend_ecs-alb-http-listener" {
   load_balancer_arn = aws_lb.ecs-alb.id
   port              = "80"
   protocol          = "HTTP"
-  depends_on        = [aws_alb_target_group.default-target-group]
+  depends_on        = [aws_lb_target_group.frontend]
 
   default_action {
     type             = "forward"
-    target_group_arn = aws_alb_target_group.default-target-group.arn
+    target_group_arn = aws_lb_target_group.frontend.arn
+  }
+}
+
+resource "aws_lb_listener_rule" "frontend_lr" {
+  listener_arn = aws_lb_listener.frontend_ecs-alb-http-listener.arn
+  priority = 100
+  condition {
+    path_pattern {
+      values = ["*"]
+  }
+  }
+
+  action {
+    type = "forward"
+    target_group_arn = aws_lb_target_group.frontend.arn
   }
 }
 
