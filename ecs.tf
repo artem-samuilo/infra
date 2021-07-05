@@ -24,8 +24,8 @@ resource "aws_ecs_task_definition" "ecs_project-task-def" {
   container_definitions = <<DEFINITION
   [
     {
-      "name": "frontend",
-      "image": "738757238296.dkr.ecr.eu-central-1.amazonaws.com/project-ecs",
+      "name": "nginx-front",
+      "image": "738757238296.dkr.ecr.eu-central-1.amazonaws.com/frontend:latest",
       "essential": true,
       "memory": 128,
       "logConfiguration": {
@@ -38,11 +38,28 @@ resource "aws_ecs_task_definition" "ecs_project-task-def" {
       },
       "portMappings": [
         {
-          "containerPort": 8080,
+          "containerPort": 80,
           "hostPort": 0
         }
       ],
-      "networkMode": "awsvpc"
+      "networkMode": "bridge",
+      "links": ["php-back"]
+    },
+
+    {
+      "name": "php-back",
+      "image": "738757238296.dkr.ecr.eu-central-1.amazonaws.com/backend:latest",
+      "essential": true,
+      "memory": 128,
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "${aws_cloudwatch_log_group.ecs_project-log-group.id}",
+          "awslogs-region": "eu-central-1",
+          "awslogs-stream-prefix": "${aws_cloudwatch_log_stream.ecs_project-log-stream.name}"
+        }
+      },
+      "networkMode": "bridge"
     }
   ]
   DEFINITION
@@ -61,7 +78,7 @@ resource "aws_ecs_service" "ecs_project_service" {
 
   load_balancer {
     target_group_arn = aws_lb_target_group.frontend.arn
-    container_name   = "frontend"
-    container_port   = 8080
+    container_name   = "nginx-front"
+    container_port   = 80
   }
 }

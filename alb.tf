@@ -1,3 +1,10 @@
+data "aws_subnet_ids" "public" {
+   vpc_id = aws_vpc.main.id
+   tags = {
+       Name = "aws_subnet_public"
+   }
+}
+
 resource "aws_lb" "ecs-alb" {
   name               = "ecs-alb"
   load_balancer_type = "application"
@@ -8,7 +15,7 @@ resource "aws_lb" "ecs-alb" {
 
 resource "aws_lb_target_group" "frontend" {
   name     = "frontend-client-tg"
-  port     = 5000
+  port     = 80
   protocol = "HTTP"
   vpc_id   = aws_vpc.main.id
   health_check {
