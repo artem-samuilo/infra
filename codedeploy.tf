@@ -1,4 +1,4 @@
-resource "aws_iam_role" "aws_code_deploy" {
+/*resource "aws_iam_role" "aws_code_deploy" {
   name = "aws_code_deploy"
 
   assume_role_policy = <<EOF
@@ -46,7 +46,7 @@ resource "aws_codedeploy_deployment_group" "web-app-dg" {
     }
 
     terminate_blue_instances_on_deployment_success {
-      action            = "KEEP_ALIVE"
+      action            = "TERMINATE"
     }
   }
 
@@ -61,7 +61,19 @@ resource "aws_codedeploy_deployment_group" "web-app-dg" {
   }
 
   load_balancer_info {
-    target_group_info {
-        name = aws_lb_target_group.frontend.arn
-  }
+    target_group_pair_info {
+      prod_traffic_route {
+        listener_arns = [aws_lb_listener.frontend_ecs-alb-http-listener.arn]
+      }
+
+      target_group {
+        name = aws_lb_target_group.frontend-blue.name
+      }
+
+      target_group {
+        name = aws_lb_target_group.frontend-green.name
+      }
+    }
 }
+}
+*/

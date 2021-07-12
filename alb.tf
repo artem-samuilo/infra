@@ -1,8 +1,9 @@
 data "aws_subnet_ids" "public" {
-   vpc_id = aws_vpc.main.id
-   tags = {
-       Name = "aws_subnet_public"
-   }
+   vpc_id = module.vpc_prod.vpc_id
+   filter {
+    name   = "tag:Name"
+    values = ["aws_subnet_public*"]
+  }
 }
 
 resource "aws_lb" "ecs-alb" {
@@ -14,10 +15,10 @@ resource "aws_lb" "ecs-alb" {
 }
 
 resource "aws_lb_target_group" "frontend" {
-  name     = "frontend-client-tg"
+  name     = "frontend-tg"
   port     = 80
   protocol = "HTTP"
-  vpc_id   = aws_vpc.main.id
+  vpc_id   = module.vpc_prod.vpc_id
   health_check {
     path                = "/"
     port                = "traffic-port"
@@ -28,6 +29,7 @@ resource "aws_lb_target_group" "frontend" {
     matcher             = "200"
   }
 }
+
 
 resource "aws_lb_listener" "frontend_ecs-alb-http-listener" {
   load_balancer_arn = aws_lb.ecs-alb.id
@@ -41,25 +43,10 @@ resource "aws_lb_listener" "frontend_ecs-alb-http-listener" {
   }
 }
 
-resource "aws_lb_listener_rule" "frontend_lr" {
-  listener_arn = aws_lb_listener.frontend_ecs-alb-http-listener.arn
-  priority = 100
-  condition {
-    path_pattern {
-      values = ["*"]
-  }
-  }
-
-  action {
-    type = "forward"
-    target_group_arn = aws_lb_target_group.frontend.arn
-  }
-}
-
 resource "aws_security_group" "load-balancer" {
   name        = "load_balancer_security_group"
   description = "Controls access to the ALB"
-  vpc_id      = aws_vpc.main.id
+  vpc_id      = module.vpc_prod.vpc_id
 
   ingress {
     from_port   = 80

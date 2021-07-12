@@ -1,60 +1,44 @@
-module "vpc_prod" {
-    source   = "./modules/tf-module-network/"
-    env = "prod"
-    vpc_cidr = "10.0.0.0/16" 
-    availability_zones = [
-        "eu-central-1a",
-        "eu-central-1b",
-        "eu-central-1c"
-    ]
-    
-    private_subnets_count = 3
-    public_subnets_count  = 3	
-    newbits 		      = 8
-
-}
-/*
 resource "aws_vpc" "main" {
     cidr_block               = var.vpc_cidr
     tags = {
-     Name = "main"
+     Name = "${var.env}-vpc"
   }
 }
 
 resource "aws_internet_gateway" "aws-igw" {
     vpc_id                   = aws_vpc.main.id
     tags = {
-     Name = "main-igw"
+     Name = "${var.env}-vpc-igw"
   }
 
 }
 
 resource "aws_subnet" "aws_subnet_private" {
     vpc_id                  = "${aws_vpc.main.id}"
-    cidr_block              = element(var.private_subnets, count.index)
+    count                   = var.private_subnets_count
+    cidr_block              = cidrsubnet("${var.vpc_cidr}", var.newbits, count.index)
     availability_zone       = element(var.availability_zones, count.index)
     map_public_ip_on_launch = "false"
-    count                   = length(var.private_subnets)
     tags = {
-     Name = "aws_subnet_private"
+     Name = "aws_subnet_private-${count.index + 1}"
     }
 }
 
 resource "aws_subnet" "aws_subnet_public" {
     vpc_id                  = "${aws_vpc.main.id}"
-    cidr_block              = element(var.public_subnets, count.index)
+    count                   = var.public_subnets_count
+    cidr_block              = cidrsubnet("${var.vpc_cidr}", var.newbits, count.index + var.private_subnets_count)
     availability_zone       = element(var.availability_zones, count.index)
     map_public_ip_on_launch = "true"
-    count                   = length(var.public_subnets)
     tags = {
-     Name = "aws_subnet_public"
+     Name = "aws_subnet_public-${count.index + 1}"
     }
 }
 
 resource "aws_route_table" "public" {
     vpc_id = aws_vpc.main.id
     tags = {
-     Name = "main-routing-table-public"
+     Name = "${var.env}-vpc-routing-table-public"
   }
 }
 
@@ -65,42 +49,42 @@ resource "aws_route" "public" {
 }
 
 resource "aws_route_table_association" "public" {
-    count                  = length(var.public_subnets)
+    count                  = var.public_subnets_count
     subnet_id              = element(aws_subnet.aws_subnet_public.*.id, count.index)
     route_table_id         = aws_route_table.public.id
 }
 
 resource "aws_eip" "aws_eip" {
     vpc                    = true
+    count                  = var.private_subnets_count
     depends_on             = [aws_internet_gateway.aws-igw]
 }
 
 resource "aws_nat_gateway" "nat_gw" {
     connectivity_type      = "public"
-    allocation_id          = "${aws_eip.aws_eip.id}"
+    count                  = var.private_subnets_count
+    allocation_id          = "${aws_eip.aws_eip[count.index].id}"
     subnet_id              = element(aws_subnet.aws_subnet_public.*.id, 0)
     depends_on             = [aws_internet_gateway.aws-igw]
     tags = {
-     Name = "NAT_GW"
+     Name = "${var.env}-vpc-NAT_GW"
   }
 }
 
 resource "aws_route_table" "private" {
     vpc_id                 = aws_vpc.main.id
+    count                  = var.private_subnets_count
+    route {
+        cidr_block             = "0.0.0.0/0"
+        gateway_id             = aws_nat_gateway.nat_gw[count.index].id
+    }
     tags = {
-     Name = "main-routing-table-private"
+     Name = "${var.env}-vpc-routing-table-private"
   }
 }
 
-resource "aws_route" "private" {
-    route_table_id         = aws_route_table.private.id
-    destination_cidr_block = "0.0.0.0/0"
-    gateway_id             = aws_nat_gateway.nat_gw.id
-}
-
 resource "aws_route_table_association" "private" {
-    count                  = length(var.private_subnets)
+    count                  = var.private_subnets_count
     subnet_id              = element(aws_subnet.aws_subnet_private.*.id, count.index)
-    route_table_id         = aws_route_table.private.id
+    route_table_id         = aws_route_table.private[count.index].id
 }
-*/
