@@ -13,7 +13,7 @@ data "aws_ami" "ubuntu" {
 
   owners                    = ["099720109477"] # Canonical
 }
-/*resource "aws_security_group" "bastion" {
+resource "aws_security_group" "bastion" {
   name                      = "SG-Bastion"
   vpc_id                    = "${aws_vpc.main.id}"
 
@@ -38,12 +38,12 @@ resource "aws_instance" "bastion_host" {
   instance_type             = "t3.micro"
   subnet_id                 = element(aws_subnet.aws_subnet_public.*.id, 0)
   vpc_security_group_ids    = ["${aws_security_group.bastion.id}"]
+  key_name = "workpc"
   root_block_device {
       volume_size = "20"
     }
 
   tags = {
-    Type = "Bastion Host"
+    Name = "Bastion Host"
   }
 }
-*/

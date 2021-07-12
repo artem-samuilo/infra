@@ -14,7 +14,7 @@ resource "aws_lb" "ecs-alb" {
 }
 
 resource "aws_lb_target_group" "frontend" {
-  name     = "frontend-client-tg"
+  name     = "frontend-tg"
   port     = 80
   protocol = "HTTP"
   vpc_id   = aws_vpc.main.id
@@ -28,6 +28,23 @@ resource "aws_lb_target_group" "frontend" {
     matcher             = "200"
   }
 }
+
+/*resource "aws_lb_target_group" "frontend-green" {
+  name     = "frontend-green-tg"
+  port     = 80
+  protocol = "HTTP"
+  vpc_id   = aws_vpc.main.id
+  health_check {
+    path                = "/"
+    port                = "traffic-port"
+    healthy_threshold   = 5
+    unhealthy_threshold = 2
+    timeout             = 2
+    interval            = 5
+    matcher             = "200"
+  }
+}
+*/
 
 resource "aws_lb_listener" "frontend_ecs-alb-http-listener" {
   load_balancer_arn = aws_lb.ecs-alb.id
