@@ -75,10 +75,15 @@ resource "aws_ecs_service" "ecs_project_service" {
   cluster         = aws_ecs_cluster.ecs_project.id
   task_definition = aws_ecs_task_definition.ecs_project-task-def.arn
   desired_count   = 1
+  deployment_maximum_percent = 200
+  deployment_minimum_healthy_percent = 100
 
   load_balancer {
     target_group_arn = aws_lb_target_group.frontend.arn
     container_name   = "nginx-front"
     container_port   = 80
+  }
+  deployment_controller {
+      type = "ECS"
   }
 }

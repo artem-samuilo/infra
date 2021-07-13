@@ -34,6 +34,10 @@ resource "aws_launch_configuration" "ecs_ec2_launch_conf" {
 echo ECS_CLUSTER=${aws_ecs_cluster.ecs_project.name} >> /etc/ecs/ecs.config;
 echo ECS_BACKEND_HOST= >> /etc/ecs/ecs.config;
 EOF
+
+  tags = {
+    Name        = "ecs_instance"
+  }
  lifecycle {
     create_before_destroy = true
   }
@@ -102,6 +106,14 @@ resource "aws_security_group" "asg_ecs_ec2" {
     to_port                 = 65535
     protocol                = "tcp"
     security_groups         = [aws_security_group.load-balancer.id]
+  }
+
+
+  ingress {
+    from_port               = 22
+    to_port                 = 22
+    protocol                = "tcp"
+    security_groups         = [aws_security_group.bastion.id]
   }
 
 
