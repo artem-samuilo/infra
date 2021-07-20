@@ -30,7 +30,6 @@ resource "aws_lb_target_group" "frontend" {
   }
 }
 
-
 resource "aws_lb_listener" "frontend_ecs-alb-http-listener" {
   load_balancer_arn = aws_lb.ecs-alb.id
   port              = "80"

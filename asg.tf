@@ -42,6 +42,7 @@ echo ECS_CLUSTER=${aws_ecs_cluster.ecs_project.name} >> /etc/ecs/ecs.config;
 echo ECS_BACKEND_HOST= >> /etc/ecs/ecs.config;
 EOF
 
+
  lifecycle {
     create_before_destroy = true
   }
