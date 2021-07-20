@@ -1,8 +1,9 @@
 data "aws_subnet_ids" "private" {
-   vpc_id = aws_vpc.main.id
-   tags = {
-       Name = "aws_subnet_private"
-   }
+   vpc_id = module.vpc_prod.vpc_id
+   filter {
+    name   = "tag:Name"
+    values = ["aws_subnet_private*"]
+  }
 }
 
 resource "aws_autoscaling_group" "ecs-cluster" {
@@ -13,7 +14,12 @@ resource "aws_autoscaling_group" "ecs-cluster" {
   health_check_type    = "EC2"
   launch_configuration = aws_launch_configuration.ecs_ec2_launch_conf.name
   vpc_zone_identifier  = data.aws_subnet_ids.private.ids
-  target_group_arns    = [aws_lb_target_group.frontend.arn]
+
+  tag {
+    key                 = "Name"
+    value               = "ECS_Instance"
+    propagate_at_launch = true
+  }
 }
 
 resource "aws_launch_configuration" "ecs_ec2_launch_conf" {
@@ -35,9 +41,7 @@ echo ECS_CLUSTER=${aws_ecs_cluster.ecs_project.name} >> /etc/ecs/ecs.config;
 echo ECS_BACKEND_HOST= >> /etc/ecs/ecs.config;
 EOF
 
-  tags = {
-    Name        = "ecs_instance"
-  }
+
  lifecycle {
     create_before_destroy = true
   }
@@ -99,7 +103,7 @@ resource "aws_cloudwatch_metric_alarm" "memory-low" {
 
 resource "aws_security_group" "asg_ecs_ec2" {
   name                      = "asg_ecs_ec2"
-  vpc_id                    = "${aws_vpc.main.id}"
+  vpc_id                    = module.vpc_prod.vpc_id
 
   ingress {
     from_port               = 0

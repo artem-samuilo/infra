@@ -13,9 +13,27 @@ data "aws_ami" "ubuntu" {
 
   owners                    = ["099720109477"] # Canonical
 }
+
+resource "aws_instance" "bastion_host" {
+  count                     = 1
+  ami                       = data.aws_ami.ubuntu.id
+  instance_type             = "t3.micro"
+  subnet_id                 = element(module.vpc_prod.public_subnets_ids, 0)
+  vpc_security_group_ids    = ["${aws_security_group.bastion.id}"]
+  key_name = "workpc"
+  root_block_device {
+      volume_size = "20"
+    }
+
+  tags = {
+    Name = "Bastion Host"
+  }
+}
+
+
 resource "aws_security_group" "bastion" {
   name                      = "SG-Bastion"
-  vpc_id                    = "${aws_vpc.main.id}"
+  vpc_id                    = module.vpc_prod.vpc_id
 
   ingress {
     from_port               = 22
@@ -29,21 +47,5 @@ resource "aws_security_group" "bastion" {
     to_port                 = 0
     protocol                = "-1"
     cidr_blocks             = ["0.0.0.0/0"]
-  }
-}
-
-resource "aws_instance" "bastion_host" {
-  count                     = 1
-  ami                       = data.aws_ami.ubuntu.id
-  instance_type             = "t3.micro"
-  subnet_id                 = element(aws_subnet.aws_subnet_public.*.id, 0)
-  vpc_security_group_ids    = ["${aws_security_group.bastion.id}"]
-  key_name = "workpc"
-  root_block_device {
-      volume_size = "20"
-    }
-
-  tags = {
-    Name = "Bastion Host"
   }
 }
